@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios & Gestão - Agro J&L</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans select-none">
+
+    <!-- Barra Superior Verde e Branco -->
+    <header class="bg-green-700 text-white px-8 py-4 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-4">
+            <div class="bg-white text-green-800 font-black px-4 py-2 rounded-xl text-2xl tracking-tight shadow-sm">
+                AGRO J&L
+            </div>
+            <div>
+                <h1 class="text-lg font-bold leading-tight">Relatórios & Administração</h1>
+                <p class="text-xs text-green-100">Faturamento, Lucro, Comissões e Usuários</p>
+            </div>
+        </div>
+
+        <nav class="flex items-center gap-3 text-base font-semibold">
+            <a href="/pdv" class="text-green-100 hover:bg-green-600 px-4 py-2 rounded-lg transition">Vendas (PDV)</a>
+            <a href="/produtos" class="text-green-100 hover:bg-green-600 px-4 py-2 rounded-lg transition">Produtos & Granel</a>
+            <a href="/clientes" class="text-green-100 hover:bg-green-600 px-4 py-2 rounded-lg transition">clientes</a>
+            <a href="/caixa" class="text-green-100 hover:bg-green-600 px-4 py-2 rounded-lg transition">Caixa</a>
+            <a href="/relatorios" class="bg-white text-green-800 px-4 py-2 rounded-lg shadow-sm">Relatórios</a>
+        </nav>
+
+        <div class="text-right">
+            <p class="text-xs text-green-200">Acesso Restrito</p>
+            <p class="font-bold text-base">Administrador</p>
+        </div>
+    </header>
+
+       <!-- CONTEÚDO DOS RELATÓRIOS (Liberado após senha Admin) -->
+    <main id="conteudoRelatorios" class="flex-1 p-6 max-w-7xl w-full mx-auto flex flex-col gap-6">
+
+        <!-- Filtro de Período + Botão Equipe -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Inicial</label>
+                    <input type="date" id="dataInicio" class="bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-base font-semibold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Final</label>
+                    <input type="date" id="dataFim" class="bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-base font-semibold">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="carregarRelatorios()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2.5 rounded-xl text-base shadow-sm h-[46px]">
+                        🔍 Filtrar Período
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="abrirModalUsuarios()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-3 rounded-xl text-base shadow-sm">
+                👥 Gerenciar Vendedores / Usuários
+            </button>
+        </div>
+
+        <!-- Cards de Indicadores -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-xs font-bold text-slate-400 uppercase">Vendas Realizadas</span>
+                <p id="cardQtdVendas" class="text-3xl font-black text-slate-800 mt-1">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-xs font-bold text-slate-400 uppercase">Faturamento Bruto</span>
+                <p id="cardFaturamento" class="text-3xl font-black text-green-700 mt-1">R$ 0,00</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-xs font-bold text-slate-400 uppercase">Descontos Concedidos</span>
+                <p id="cardDescontos" class="text-2xl font-extrabold text-rose-600 mt-1">R$ 0,00</p>
+            </div>
+            <div class="bg-green-700 text-white p-5 rounded-2xl shadow-md">
+                <span class="text-xs font-bold text-green-200 uppercase">Lucro Bruto Estimado</span>
+                <p id="cardLucro" class="text-3xl font-black mt-1">R$ 0,00</p>
+            </div>
+        </div>
+
+        <!-- Ranking por Vendedor + Histórico de Vendas -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Ranking Vendedores -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-green-50 px-6 py-4 border-b border-green-100 font-bold text-green-900">
+                    🏆 Vendas por Vendedor
+                </div>
+                <div id="listaVendedores" class="divide-y divide-slate-100 p-4 space-y-2">
+                </div>
+            </div>
+        <!-- Ranking de Produtos Mais Vendidos -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-green-50 px-6 py-4 border-b border-green-100 font-bold text-green-900">
+                📦 Produtos Mais Vendidos no Período (Top 15)
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
+                            <th class="py-3 px-6">Posição</th>
+                            <th class="py-3 px-4">Produto</th>
+                            <th class="py-3 px-4 text-center">Qtd / Peso Vendido</th>
+                            <th class="py-3 px-6 text-right">Total Faturado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaMaisVendidos" class="divide-y divide-slate-100 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+
+            <!-- Tabela Últimas Vendas -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-green-50 px-6 py-4 border-b border-green-100 font-bold text-green-900">
+                    🧾 Histórico de Vendas no Período
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
+                                <th class="py-3 px-4">#</th>
+                                <th class="py-3 px-4">Data/Hora</th>
+                                <th class="py-3 px-4">Cliente</th>
+                                <th class="py-3 px-4">Vendedor</th>
+                                <th class="py-3 px-4">Pgto</th>
+                                <th class="py-3 px-4 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaHistoricoVendas" class="divide-y divide-slate-100 text-sm">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+    <!-- MODAL: Gerenciar Usuários -->
+    <div id="modalUsuarios" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h2 class="text-xl font-black text-slate-800">👥 Equipe & Permissões</h2>
+                <button onclick="fecharModalUsuarios()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">✕</button>
+            </div>
+
+            <form onsubmit="cadastrarUsuario(event)" class="mt-4 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <p class="text-xs font-bold text-slate-500 uppercase">Adicionar Novo Acesso</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="novoUserNome" required placeholder="Nome (Ex: João Silva)" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    <input type="text" id="novoUserLogin" required placeholder="Login (Ex: joao)" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="password" id="novoUserSenha" required placeholder="Senha" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                    <select id="novoUserPerfil" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold">
+                        <option value="vendedor">Vendedor (Só PDV/Caixa)</option>
+                        <option value="admin">Administrador (Total)</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-sm">
+                    + Cadastrar Usuário
+                </button>
+            </form>
+
+            <div class="mt-4">
+                <p class="text-xs font-bold text-slate-500 uppercase mb-2">Usuários Cadastrados</p>
+                <div id="listaUsuariosCadastrados" class="divide-y divide-slate-100 max-h-48 overflow-y-auto text-sm">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const formatarMoeda = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // Define datas padrão como hoje
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementById('dataInicio').value = hoje;
+        document.getElementById('dataFim').value = hoje;
+
+            async function carregarRelatorios() {
+            const ini = document.getElementById('dataInicio').value;
+            const fim = document.getElementById('dataFim').value;
+
+            const resp = await fetch(`/api/relatorios/resumo?data_inicio=${ini}&data_fim=${fim}`);
+            const dados = await resp.json();
+
+            document.getElementById('cardQtdVendas').innerText = dados.resumo.qtd_vendas;
+            document.getElementById('cardFaturamento').innerText = formatarMoeda(dados.resumo.faturamento);
+            document.getElementById('cardDescontos').innerText = formatarMoeda(dados.resumo.total_descontos);
+            document.getElementById('cardLucro').innerText = formatarMoeda(dados.resumo.lucro_estimado);
+            // Renderiza Produtos Mais Vendidos
+            const tbodyMais = document.getElementById('tabelaMaisVendidos');
+            if (!dados.mais_vendidos || dados.mais_vendidos.length === 0) {
+                tbodyMais.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400">Nenhum produto vendido neste período.</td></tr>';
+            } else {
+                tbodyMais.innerHTML = dados.mais_vendidos.map((p, idx) => {
+                    const qtdFormatada = p.unidade === 'KG'
+                        ? p.qtd_vendida.toFixed(3).replace('.', ',') + ' kg'
+                        : p.qtd_vendida + ' un';
+                    return '<tr class="hover:bg-slate-50">' +
+                        '<td class="py-3 px-6 font-black text-green-700">#' + (idx + 1) + '</td>' +
+                        '<td class="py-3 px-4 font-bold text-slate-800">' + p.nome + '</td>' +
+                        '<td class="py-3 px-4 text-center font-semibold text-slate-600">' + qtdFormatada + '</td>' +
+                        '<td class="py-3 px-6 text-right font-extrabold text-green-700">' + formatarMoeda(p.total_faturado) + '</td>' +
+                    '</tr>';
+                }).join('');
+            }
+
+            // Renderiza ranking vendedores
+            const divVend = document.getElementById('listaVendedores');
+            if (dados.por_vendedor.length === 0) {
+                divVend.innerHTML = '<p class="text-slate-400 text-sm py-2">Nenhuma venda no período.</p>';
+            } else {
+                divVend.innerHTML = dados.por_vendedor.map(v => `
+                    <div class="py-2.5 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-slate-800">${v.vendedor_nome}</p>
+                            <p class="text-xs text-slate-400">${v.qtd} venda(s)</p>
+                        </div>
+                        <span class="font-extrabold text-green-700">${formatarMoeda(v.total)}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Renderiza tabela de vendas
+            const tbody = document.getElementById('tabelaHistoricoVendas');
+            if (dados.ultimas_vendas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Nenhuma venda encontrada nestas datas.</td></tr>';
+            } else {
+                tbody.innerHTML = dados.ultimas_vendas.map(v => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 font-bold text-slate-500">#${v.id}</td>
+                        <td class="py-3 px-4 text-slate-600">${v.data_formatada}</td>
+                        <td class="py-3 px-4 font-medium">
+                            ${v.cliente_nome || 'Consumidor'}
+                            ${v.eh_entrega ? '<span class="ml-1 bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded">🚚 Entrega</span>' : ''}
+                        </td>
+                        <td class="py-3 px-4 text-slate-600">${v.vendedor_nome}</td>
+                        <td class="py-3 px-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs font-bold">${v.forma_pagamento}</span></td>
+                        <td class="py-3 px-4 text-right font-extrabold text-green-700">${formatarMoeda(v.total)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function abrirModalUsuarios() {
+            document.getElementById('modalUsuarios').classList.remove('hidden');
+            carregarListaUsuarios();
+        }
+
+        function fecharModalUsuarios() {
+            document.getElementById('modalUsuarios').classList.add('hidden');
+        }
+
+        async function carregarListaUsuarios() {
+            const resp = await fetch('/api/usuarios');
+            const users = await resp.json();
+            document.getElementById('listaUsuariosCadastrados').innerHTML = users.map(u => `
+                <div class="py-2.5 flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-slate-800">${u.nome}</span>
+                        <span class="text-xs text-slate-400 ml-2">(@${u.login})</span>
+                    </div>
+                    <span class="text-xs font-bold uppercase px-2 py-0.5 rounded ${u.perfil === 'admin' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600'}">
+                        ${u.perfil}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        async function cadastrarUsuario(e) {
+            e.preventDefault();
+            const payload = {
+                nome: document.getElementById('novoUserNome').value,
+                login: document.getElementById('novoUserLogin').value,
+                senha: document.getElementById('novoUserSenha').value,
+                perfil: document.getElementById('novoUserPerfil').value
+            };
+            const resp = await fetch('/api/usuarios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (resp.ok) {
+                document.getElementById('novoUserNome').value = '';
+                document.getElementById('novoUserLogin').value = '';
+                document.getElementById('novoUserSenha').value = '';
+                carregarListaUsuarios();
+            } else {
+                const err = await resp.json();
+                alert('Erro: ' + err.detail);
+            }
+        }
+                // No final do <script> do relatorios.html:
+        carregarRelatorios();
+
+    </script>
+</body>
+</html>

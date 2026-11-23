@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Agro J&L</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex items-center justify-center p-4 font-sans select-none">
+
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden">
+        <!-- Cabeçalho Verde -->
+        <div class="bg-green-700 text-white p-8 text-center">
+            <div class="inline-block bg-white text-green-800 font-black px-5 py-2.5 rounded-2xl text-3xl tracking-tight shadow-sm mb-3">
+                AGRO J&L
+            </div>
+            <p class="text-green-100 text-sm font-medium">Sistema de Gestão & Frente de Caixa</p>
+        </div>
+
+        <!-- Formulário de Login -->
+        <form onsubmit="fazerLogin(event)" class="p-8 space-y-5">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Usuário / Login</label>
+                <input type="text" id="loginInput" required autofocus placeholder="Digite seu usuário..."
+                    class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-4 py-3.5 text-lg font-bold focus:outline-none focus:border-green-600 focus:bg-white transition">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Senha</label>
+                <input type="password" id="senhaInput" required placeholder="••••••"
+                    class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-4 py-3.5 text-lg font-bold focus:outline-none focus:border-green-600 focus:bg-white transition">
+            </div>
+
+            <div id="msgErro" class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold px-4 py-3 rounded-xl text-center">
+                Usuário ou senha incorretos!
+            </div>
+
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-xl text-lg shadow-md transition">
+                ENTRAR NO SISTEMA
+            </button>
+
+        </form>
+    </div>
+
+    <script>
+        async function fazerLogin(e) {
+            e.preventDefault();
+            const login = document.getElementById('loginInput').value.trim();
+            const senha = document.getElementById('senhaInput').value;
+            const msgErro = document.getElementById('msgErro');
+
+            msgErro.classList.add('hidden');
+
+            const resp = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: login, senha: senha })
+            });
+
+            if (resp.ok) {
+                const usuario = await resp.json();
+                localStorage.setItem('agro_jl_usuario', JSON.stringify(usuario));
+                window.location.href = '/pdv';
+            } else {
+                msgErro.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

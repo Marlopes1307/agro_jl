@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Caixa - Agro J&L</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans select-none">
+
+    <!-- Barra Superior Verde e Branco -->
+    <header class="bg-green-700 text-white px-8 py-4 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-4">
+            <div class="bg-white text-green-800 font-black px-4 py-2 rounded-xl text-2xl tracking-tight shadow-sm">
+                AGRO J&L
+            </div>
+            <div>
+                <h1 class="text-lg font-bold leading-tight">Controle de Caixa</h1>
+                <p class="text-xs text-green-100">Abertura, Sangria, Suprimento e Fechamento</p>
+            </div>
+        </div>
+
+        <nav class="flex items-center gap-3 text-base font-semibold">
+            <a href="/pdv" class="text-green-100 hover:bg-green-600 px-4 py-2 rounded-lg transition">Vendas (PDV)</a>
+            <a href="/produtos" class="text-green-100 hover:bg-green-600 px-4 py-2 rounded-lg transition">Produtos & Granel</a>
+            <a href="/caixa" class="bg-white text-green-800 px-4 py-2 rounded-lg shadow-sm">Caixa</a>
+            <a href="/relatorios" class="text-green-100 hover:bg-green-600 px-4 py-2 rounded-lg transition">Relatórios</a>
+        </nav>
+
+                <div class="flex items-center gap-4">
+            <div class="text-right">
+                <p class="text-xs text-green-200" id="perfilOperadorHeader">Operador</p>
+                <p class="font-bold text-base" id="nomeOperadorHeader">Admin</p>
+            </div>
+            <button onclick="trocarUsuario()" title="Trocar de vendedor ou administrador"
+                class="bg-green-800 hover:bg-amber-500 text-white font-bold px-3.5 py-2 rounded-xl text-xs border border-green-500 transition shadow-sm flex items-center gap-1.5">
+                🔄 Trocar Usuário
+            </button>
+        </div>
+
+    </header>
+
+    <main class="flex-1 p-6 max-w-6xl w-full mx-auto flex flex-col gap-6">
+
+        <!-- TELA QUANDO O CAIXA ESTIVER FECHADO -->
+        <div id="telaCaixaFechado" class="hidden bg-white p-10 rounded-2xl shadow-sm border border-slate-200 max-w-lg mx-auto my-auto text-center space-y-5">
+            <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-3xl mx-auto font-bold">
+                🔒
+            </div>
+            <h2 class="text-2xl font-black text-slate-800">O Caixa Está Fechado</h2>
+            <p class="text-slate-500 text-base">Informe o valor inicial em dinheiro (fundo de troco) na gaveta para liberar as vendas no PDV.</p>
+            
+            <form onsubmit="abrirNovoCaixa(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fundo de Troco Inicial (R$)</label>
+                    <input type="number" id="valorInicialInput" step="0.01" min="0" value="100.00" required
+                        class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-4 py-3.5 text-2xl font-black text-green-700 text-center focus:outline-none focus:border-green-600">
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-xl text-lg shadow-md transition">
+                    🔓 ABRIR CAIXA AGORA
+                </button>
+            </form>
+        </div>
+
+        <!-- TELA QUANDO O CAIXA ESTIVER ABERTO -->
+        <div id="telaCaixaAberto" class="hidden space-y-6">
+            
+            <!-- Cards de Resumo Financeiro -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Fundo Inicial</span>
+                    <p id="cardInicial" class="text-2xl font-extrabold text-slate-800 mt-1">R$ 0,00</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Vendas em Dinheiro</span>
+                    <p id="cardDinheiro" class="text-2xl font-extrabold text-green-700 mt-1">R$ 0,00</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Suprimentos / Sangrias</span>
+                    <p id="cardMovs" class="text-lg font-bold text-slate-700 mt-1">+ R$ 0,00 / - R$ 0,00</p>
+                </div>
+                <div class="bg-green-700 text-white p-5 rounded-2xl shadow-md">
+                    <span class="text-xs font-bold text-green-200 uppercase">Saldo Esperado na Gaveta</span>
+                    <p id="cardSaldoGaveta" class="text-3xl font-black mt-1">R$ 0,00</p>
+                </div>
+            </div>
+
+            <!-- Meios Eletrônicos + Ações -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Resumo Digital (Pix / Cartões) -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="text-lg font-black text-slate-800 border-b border-slate-100 pb-3">💳 Vendas Digitais no Turno</h3>
+                    <div class="space-y-3 text-base">
+                        <div class="flex justify-between">
+                            <span class="text-slate-600 font-medium">📱 Pix:</span>
+                            <span id="resumoPix" class="font-bold text-slate-800">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600 font-medium">💳 Cartão de Débito:</span>
+                            <span id="resumoDebito" class="font-bold text-slate-800">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600 font-medium">💳 Cartão de Crédito:</span>
+                            <span id="resumoCredito" class="font-bold text-slate-800">R$ 0,00</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 flex gap-3">
+                        <button onclick="abrirModalMov('suprimento')" class="flex-1 bg-green-50 hover:bg-green-100 text-green-800 border border-green-300 font-bold py-3 rounded-xl transition">
+                            + Suprimento
+                        </button>
+                        <button onclick="abrirModalMov('sangria')" class="flex-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold py-3 rounded-xl transition">
+                            - Sangria (Retirada)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Fechamento de Caixa -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border-2 border-rose-200 flex flex-col justify-between space-y-4">
+                    <div>
+                        <h3 class="text-lg font-black text-rose-700 border-b border-slate-100 pb-3">🔒 Encerrar Turno / Fechar Caixa</h3>
+                        <p class="text-sm text-slate-500 mt-2">Conte todo o dinheiro físico da gaveta e digite abaixo para conferir:</p>
+                        
+                        <div class="mt-4">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor Contado na Gaveta (R$)</label>
+                            <input type="number" id="valorContadoInput" step="0.01" placeholder="0,00"
+                                class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-4 py-3 text-2xl font-black text-slate-800 focus:outline-none focus:border-rose-500">
+                        </div>
+                    </div>
+
+                    <button onclick="fecharCaixaAtual()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-4 rounded-xl text-lg shadow-md transition">
+                        FECHAR CAIXA DO DIA
+                    </button>
+                </div>
+            </div>
+
+            <!-- Histórico de Sangrias e Suprimentos -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-3.5 border-b border-slate-200 font-bold text-slate-700">
+                    📋 Histórico de Movimentações da Gaveta (Sangrias e Suprimentos)
+                </div>
+                <div id="listaMovimentacoes" class="divide-y divide-slate-100 p-4 text-sm text-slate-600">
+                    Nenhuma movimentação registrada neste turno.
+                </div>
+            </div>
+
+        </div>
+    </main>
+    <!-- MODAL: Sangria ou Suprimento -->
+    <div id="modalMov" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h2 id="tituloModalMov" class="text-xl font-black text-slate-800 pb-3 border-b border-slate-100">Registrar Movimentação</h2>
+            <form onsubmit="salvarMovimentacao(event)" class="mt-4 space-y-4">
+                <input type="hidden" id="tipoMovInput">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor (R$)</label>
+                    <input type="number" id="valorMovInput" step="0.01" min="0.01" required
+                        class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-xl font-bold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Motivo / Descrição</label>
+                    <input type="text" id="motivoMovInput" required placeholder="Ex: Pagamento entrega, Troco adicional..."
+                        class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-base">
+                </div>
+                <div class="flex justify-end gap-3 pt-3">
+                    <button type="button" onclick="fecharModalMov()" class="px-5 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-600">Cancelar</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-green-600 text-white font-bold">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const formatarMoeda = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        async function carregarStatusCaixa() {
+            const resp = await fetch('/api/caixa/atual');
+            const dados = await resp.json();
+
+            if (!dados.aberto) {
+                document.getElementById('telaCaixaFechado').classList.remove('hidden');
+                document.getElementById('telaCaixaAberto').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('telaCaixaFechado').classList.add('hidden');
+            document.getElementById('telaCaixaAberto').classList.remove('hidden');
+
+            document.getElementById('cardInicial').innerText = formatarMoeda(dados.caixa.valor_inicial);
+            document.getElementById('cardDinheiro').innerText = formatarMoeda(dados.vendas_pgto['Dinheiro'] || 0);
+            document.getElementById('cardMovs').innerText = `+ ${formatarMoeda(dados.suprimentos)} / - ${formatarMoeda(dados.sangrias)}`;
+            document.getElementById('cardSaldoGaveta').innerText = formatarMoeda(dados.saldo_gaveta_esperado);
+
+            document.getElementById('resumoPix').innerText = formatarMoeda(dados.vendas_pgto['Pix'] || 0);
+            document.getElementById('resumoDebito').innerText = formatarMoeda(dados.vendas_pgto['Débito'] || 0);
+            document.getElementById('resumoCredito').innerText = formatarMoeda(dados.vendas_pgto['Crédito'] || 0);
+
+            const lista = document.getElementById('listaMovimentacoes');
+            if (dados.historico_movs.length === 0) {
+                lista.innerHTML = '<p class="text-slate-400 py-2">Nenhuma sangria ou suprimento registrado neste turno.</p>';
+            } else {
+                lista.innerHTML = dados.historico_movs.map(m => `
+                    <div class="py-3 flex justify-between items-center">
+                        <div>
+                            <span class="font-bold uppercase text-xs px-2 py-0.5 rounded ${m.tipo === 'suprimento' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                                ${m.tipo}
+                            </span>
+                            <span class="font-semibold text-slate-800 ml-2">${m.motivo}</span>
+                        </div>
+                        <span class="font-extrabold ${m.tipo === 'suprimento' ? 'text-green-700' : 'text-rose-600'}">
+                            ${m.tipo === 'suprimento' ? '+' : '-'} ${formatarMoeda(m.valor)}
+                        </span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function abrirNovoCaixa(e) {
+            e.preventDefault();
+            const valor = parseFloat(document.getElementById('valorInicialInput').value);
+            const resp = await fetch('/api/caixa/abrir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ valor_inicial: valor })
+            });
+            if (resp.ok) carregarStatusCaixa();
+        }
+
+        function abrirModalMov(tipo) {
+            document.getElementById('tipoMovInput').value = tipo;
+            document.getElementById('tituloModalMov').innerText = tipo === 'suprimento' ? '+ Adicionar Suprimento (Troco)' : '- Registrar Sangria (Retirada)';
+            document.getElementById('valorMovInput').value = '';
+            document.getElementById('motivoMovInput').value = '';
+            document.getElementById('modalMov').classList.remove('hidden');
+        }
+
+        function fecharModalMov() {
+            document.getElementById('modalMov').classList.add('hidden');
+        }
+
+        async function salvarMovimentacao(e) {
+            e.preventDefault();
+            const payload = {
+                tipo: document.getElementById('tipoMovInput').value,
+                valor: parseFloat(document.getElementById('valorMovInput').value),
+                motivo: document.getElementById('motivoMovInput').value
+            };
+            const resp = await fetch('/api/caixa/movimentacao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (resp.ok) {
+                fecharModalMov();
+                carregarStatusCaixa();
+            }
+        }
+
+        async function fecharCaixaAtual() {
+            const valorContado = parseFloat(document.getElementById('valorContadoInput').value);
+            if (isNaN(valorContado)) {
+                alert('Informe o valor contado na gaveta antes de fechar!');
+                return;
+            }
+            if (!confirm('Confirma o fechamento do caixa atual?')) return;
+
+            const resp = await fetch('/api/caixa/fechar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ valor_informado: valorContado })
+            });
+
+            if (resp.ok) {
+                const res = await resp.json();
+                const diff = res.diferenca;
+                let msg = '✅ Caixa fechado com sucesso!\n';
+                if (Math.abs(diff) < 0.01) msg += '🎉 O valor bateu exato com o sistema!';
+                else if (diff > 0) msg += `⚠️ Sobra de caixa: +${formatarMoeda(diff)}`;
+                else msg += `❌ Falta (quebra) de caixa: ${formatarMoeda(diff)}`;
+                
+                alert(msg);
+                carregarStatusCaixa();
+            }
+        }
+
+        carregarStatusCaixa();
+                const usuarioLogado = JSON.parse(localStorage.getItem('agro_jl_usuario'));
+        if (!usuarioLogado) {
+            window.location.href = '/';
+        } else {
+            const elNome = document.getElementById('nomeOperadorHeader');
+            const elPerfil = document.getElementById('perfilOperadorHeader');
+            if (elNome) elNome.innerText = usuarioLogado.nome;
+            if (elPerfil) elPerfil.innerText = usuarioLogado.perfil === 'admin' ? 'Administrador' : 'Vendedor';
+
+            if (usuarioLogado.perfil === 'vendedor') {
+                document.querySelectorAll('nav a').forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href === '/produtos' || href === '/relatorios') {
+                        link.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        function trocarUsuario() {
+            localStorage.removeItem('agro_jl_usuario');
+            window.location.href = '/';
+        }
+
+    </script>
+</body>
+</html>
